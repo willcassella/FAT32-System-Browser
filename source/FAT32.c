@@ -2,19 +2,6 @@
 
 #include "../include/FAT32.h"
 
-/* Represents the address of a FAT32 cluster. */
-struct FAT32_cluster_address_t
-{
-    /* The first four bits of a 32-bit cluster address are unused by FAT32.  */
-    uint16_t unused : 4;
-
-    /* The high 12 bits of a cluster addres. */
-    uint16_t index_high : 12;
-
-    /* The remaining 28 bits represent the index of the cluster. */
-    uint16_t index_low;
-};
-
 struct FAT32_directory_entry_t
 {
     /* The name of the file. Long names are not supported. */
