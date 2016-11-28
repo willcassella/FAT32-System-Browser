@@ -141,8 +141,38 @@ int main()
             scanf("%s", input);
             cwdir = cmd_open(cwdir, input);
         }
+        else if(input[0] == 'n' && input[1] == 'e' && input [2] == 'w')
+        {
+            // Create new file/directory
+            scanf("%s", input);
+            //call new function
+        }   
+        else if(input[0] == 'w' && input[1]== 'r' && input[2] == 'i' && input[3] == 't' && input[4] == 'e')
+        {
+            // Write to a file
+            scanf("%s", input);
+            //call write function
+        } 
+        else if(input[0] == 'r' && input[1] == 'w')
+        {
+            // Remove a file/directory
+            scanf("%s", input);
+            //call remove function
+        }  
+        else if(input[0]== 's' && input[1] == 't' && input[2] == 'a' && input[3] == 't')
+        {
+            // Print the stats of the current file/directory
+            scanf("%s", input);
+            //call stat function
+        }   
+        else if(input[0]== 'h' && input[1] == 'e' && input[2] == 'l' && input[3] == 'p') 
+        {
+            // Print the help menu
+            cmd_help();
+        }    
         else if (input[0] == 'e' && input[1] == 'x' && input[2] == 'i' && input[3] == 't')
         {
+            // Exit the program
             return 0;
         }
         else
