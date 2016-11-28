@@ -19,18 +19,18 @@ struct FAT32_file_t* cmd_ls(struct FAT32_file_t* cwdir, const char* unused)
 
 void cmd_help()
 {
-    printf("FAT32 File Explorer/Reader");
-    printf("Enter one of the following valid commands:");
-    printf("ls - list of files/directories");
-    printf("cd - change directory");
-    printf("open - open a file");
-    printf("new - add new file");
-    printf("mkdir - create a new directory");
-    printf("write - write to a file");
-    printf("rm - remove a file/directory");
-    printf("stat - print the stats of current file/directory");
-    printf("help - print this menu")
-    printf("exit - exit the program");
+    printf("FAT32 File Explorer/Reader\n");
+    printf("Enter one of the following valid commands:\n");
+    printf("ls - list of files/directories\n");
+    printf("cd - change directory\n");
+    printf("open - open a file\n");
+    printf("new - add new file\n");
+    printf("mkdir - create a new directory\n");
+    printf("write - write to a file\n");
+    printf("rm - remove a file/directory\n");
+    printf("stat - print the stats of current file/directory\n");
+    printf("help - print this menu\n")
+    printf("exit - exit the program\n");
 }
 
 struct FAT32_file_t* cmd_cd(struct FAT32_file_t* cwdir, const char* path)
