@@ -1,11 +1,12 @@
 // FAT32.c
 
+#include <stdlib.h>
 #include "../include/FAT32.h"
 
 /* The number of bytes in a FAT32 cluster */
 #define FAT32_CLUSTER_SIZE 32
 #define FAT32_NUM_CLUSTERS 256
-#define FAT32_TABLE_SIZE (sizeof(FAT32_cluster_address_t) * FAT32_NUM_CLUSTERS)
+#define FAT32_TABLE_SIZE (sizeof(struct FAT32_cluster_address_t) * FAT32_NUM_CLUSTERS)
 #define FAT32_DATA_SIZE (FAT32_CLUSTER_SIZE * FAT32_NUM_CLUSTERS)
 
 typedef uint8_t HDByte_t;
@@ -25,21 +26,29 @@ static void set_table_entry(struct FAT32_cluster_address_t address, struct FAT32
 
 static HDByte_t* get_data_entry(struct FAT32_cluster_address_t address)
 {
-    return FAT32_HARD_DRIVE[FAT32_TABLE_SIZE + address.index * FAT32_CLUSTER_SIZE];
+    return &FAT32_HARD_DRIVE[FAT32_TABLE_SIZE + address.index * FAT32_CLUSTER_SIZE];
 }
 
 static struct FAT32_cluster_address_t get_empty(void)
 {
     struct FAT32_cluster_address_t result;
 
-    for (result.index = 1; result.index < NUM_CLUSTERS; ++i)
+    // For each cluster address
+    for (result.index = 1; result.index < FAT32_NUM_CLUSTERS; ++result.index)
     {
-        if (table_entry(result).index == FAT32_CLUSTER_ADDRESS_NULL)
+        // If the FAT value for this address is NULL, it's unused
+        if (get_table_entry(result).index == FAT32_CLUSTER_ADDRESS_NULL)
         {
-            set_table_entry(address, FAT32_CLUSTER_ADDRESS_EOC);
-            return result;
+            // Give it a value
+            struct FAT32_cluster_address_t resultValue;
+            resultValue.index = FAT32_CLUSTER_ADDRESS_EOC;
+            set_table_entry(result, resultValue);
+
+            break;
         }
     }
+
+    return result;
 }
 
 struct FAT32_file_t
@@ -82,7 +91,7 @@ int FAT32_fclose(struct FAT32_file_t* file)
 size_t FAT32_fread(void* buffer, size_t size, size_t count, struct FAT32_file_t* file)
 {
     // Fill the buffer with bytes
-    byte* cBuffer = (byte*)buffer;
+    HDByte_t* cBuffer = (HDByte_t*)buffer;
     size_t offset = 0;
 
     // For each byte to be read
@@ -97,12 +106,12 @@ size_t FAT32_fread(void* buffer, size_t size, size_t count, struct FAT32_file_t*
         // If we're at the end of this cluster
         if (file->offset == FAT32_CLUSTER_SIZE)
         {
-            file->current_cluster = table_entry(file->current_cluster);
+            file->current_cluster = get_table_entry(file->current_cluster);
             file->current_cluster_distance += 1;
             file->offset = 0;
         }
 
-        cBuffer[offset] = data_entry(file->current_cluster)[file->offset];
+        cBuffer[offset] = get_data_entry(file->current_cluster)[file->offset];
     }
 
     return offset / size;
@@ -111,7 +120,7 @@ size_t FAT32_fread(void* buffer, size_t size, size_t count, struct FAT32_file_t*
 size_t FAT32_fwrite(const void* buffer, size_t size, size_t count, struct FAT32_file_t* file)
 {
     // Read the buffer as bytes
-    byte* cBuffer = (byte*)buffer;
+    HDByte_t* cBuffer = (HDByte_t*)buffer;
     size_t offset = 0;
 
     for (; offset < count * size; ++offset, ++file->offset)
@@ -138,7 +147,7 @@ size_t FAT32_fwrite(const void* buffer, size_t size, size_t count, struct FAT32_
     }
 
     // If we finished at the last cluster
-    if (get_table_entry(file->current_cluster).index = FAT32_CLUSTER_ADDRESS_EOC)
+    if (get_table_entry(file->current_cluster).index == FAT32_CLUSTER_ADDRESS_EOC)
     {
         file->end_offset = file->offset < file->end_offset ? file->end_offset : file->offset;
     }
@@ -162,7 +171,7 @@ int FAT32_fseek(struct FAT32_file_t* file, long offset, int origin)
     // Set the current cluster
     while (offset != 0)
     {
-        file->current_cluster = table_entry(file->current_cluster);
+        file->current_cluster = get_table_entry(file->current_cluster);
         offset /= FAT32_CLUSTER_SIZE;
     }
 

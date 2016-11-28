@@ -2,6 +2,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stddef.h>
 
 /* Represents the address of a FAT32 cluster. */
 struct FAT32_cluster_address_t
@@ -16,7 +17,7 @@ struct FAT32_cluster_address_t
 #define FAT32_CLUSTER_ADDRESS_NULL 0x00000000
 
 /* A cluster address with this index indicates that this cluster is the end of the cluster chain. */
-#define FAT32_CLUSTER_ADDRESS_EOC 0xFFFFFF0F
+#define FAT32_CLUSTER_ADDRESS_EOC 0xFFFFFF
 
 struct FAT32_file_t;
 
