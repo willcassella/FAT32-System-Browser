@@ -88,38 +88,17 @@ struct FAT32_directory_entry_t
     uint32_t size;
 };
 
-/* Returns the cluster address of the first subdirectory file that matches the name. */
-int get_entry(struct FAT32_file_t* dir, const char* name, struct FAT32_directory_entry_t* outEntry)
-{
-    // Seek to the beginning of the directory file
-    FAT32_fseek(dir, FAT32_SEEK_SET, 0);
+/* Returns the cluster address of the first directory entry file that matches the name. */
+int FAT32_dir_get_entry(struct FAT32_file_t* dir, const char* name, struct FAT32_directory_entry_t* outEntry);
 
-    // Loop until the entry is found
-    while (FAT32_fread(outEntry, sizeof(FAT32_directory_entry_t), 1 dir))
-    {
-        if (outEntry.name == name)
-        {
-            return 1;
-        }
-    }
+/* Opens a file containing the directory entry. */
+struct FAT32_file_t* FAT32_dir_open_entry(struct FAT32_directory_entry_t* entry);
 
-    return 0;
-}
+/* Closes a file handle for the given entry. */
+void FAT32_dir_close_entry(struct FAT32_directory_entry_t* entry, struct FAT32_file_t* file);
 
-struct FAT32_file_t* open_entry(struct FAT32_directory_entry_t* entry)
-{
-    // Construct the address
-    FAT32_cluster_address_t address{
-        .index_high = entry->first_cluster_index_high,
-        .index_low = entry->first_cluster_index_low
-    };
+/* Creates a new file with the given name and attributes in the given directory file. */
+void FAT32_dir_new_entry(struct FAT32_file_t* dir, const char* name, FAT32_dir_entry_attribs_t attribs, struct FAT32_directory_entry_t* outEntry);
 
-    // Open the file
-    return FAT32_fopen(address);
-}
-
-void close_entry(struct FAT32_file_t* file);
-
-void new_entry(struct FAT32_file_t* dir, const char* name, FAT32_dir_entry_attribs_t attribs, struct FAT32_directory_entry_t* outEntry);
-
-int remove_entry(struct FAT32_file_t* dir, const char* name);
+/* Deletes a file with the given name and attributes from the given directory file. */
+int FAT32_dir_remove_entry(struct FAT32_file_t* dir, const char* name);

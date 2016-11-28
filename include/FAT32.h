@@ -24,11 +24,14 @@ struct FAT32_file_t;
 /* Returns the cluster address of the root directory in the file system. */
 struct FAT32_cluster_address_t FAT32_get_root(void);
 
-/* Opens a FAT32 file, given its starting cluster address. */
-struct FAT32_file_t* FAT32_fopen(struct FAT32_cluster_address_t address, size_t endOffset);
+/* Reserves an empty cluster, and returns the address to the caller. */
+struct FAT32_cluster_address_t FAT32_new_cluster(void);
 
-/* Returns the starting cluster address of the given file object. */
-struct FAT32_cluster_address_t FAT32_faddress(struct FAT32_file_t* file);
+/* Frees all clusters in the chain given by 'address'. */
+void FAT32_free_cluster(struct FAT32_cluster_address_t address);
+
+/* Opens a FAT32 file, given its starting cluster address, and the size of the file. */
+struct FAT32_file_t* FAT32_fopen(struct FAT32_cluster_address_t address, uint32_t size);
 
 /* Closes a FAT32 file. */
 int FAT32_fclose(struct FAT32_file_t* file);
@@ -50,3 +53,9 @@ size_t FAT32_fwrite(const void* buffer, size_t size, size_t count, struct FAT32_
 
 /* Works the same was as normal 'fseek'. */
 int FAT32_fseek(struct FAT32_file_t* file, long offset, int origin);
+
+/* Returns the number of bytes in the file reader is. */
+long FAT32_ftell(struct FAT32_file_t* file);
+
+/* Returns the starting cluster address of the given file object. */
+struct FAT32_cluster_address_t FAT32_faddress(struct FAT32_file_t* file);
