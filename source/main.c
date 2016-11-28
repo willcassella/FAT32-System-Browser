@@ -153,7 +153,7 @@ int main()
             scanf("%s", input);
             //call write function
         } 
-        else if(input[0] == 'r' && input[1] == 'w')
+        else if(input[0] == 'r' && input[1] == 'm')
         {
             // Remove a file/directory
             scanf("%s", input);
