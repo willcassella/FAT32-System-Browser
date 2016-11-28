@@ -134,6 +134,19 @@ struct FAT32_file_t* cmd_rm(struct FAT32_file_t* cwdir, const char* path)
     return cwdir;
 }
 
+struct FAT32_file_t* cmd_write(struct FAT32_file_t* cwdir, const char* path, const char* write)
+{
+    struct FAT32_directory_entry_t entry;
+    if(!FAT32_dir_get_entry(cwdir, path, &entry))
+    {
+        FAT32_new_entry(cwdir, path, 0, &entry);
+    } 
+    struct FAT32_file_t* file = FAT32_dir_open_entry(entry);   
+    FAT32_fwrite(write, sizeof(char), strlen(write), file);
+    FAT32_dir_close_entry(entry, file);
+    return cwdir;
+}
+
 int main()
 {
     char input[256];
@@ -178,8 +191,10 @@ int main()
         else if(input[0] == 'w' && input[1] == 'r' && input[2] == 'i' && input[3] == 't' && input[4] == 'e')
         {
             // Write to a file
+            char arg[16];
+            scanf("%s", arg);
             scanf("%s", input);
-            //call write function
+            cwdir = cmd_write(cwdir, arg, input);
         }
         else if(input[0] == 'r' && input[1] == 'm')
         {
