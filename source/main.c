@@ -25,6 +25,7 @@ void cmd_help()
     printf("cd - change directory");
     printf("open - open a file");
     printf("new - add new file");
+    printf("mkdir - create a new directory");
     printf("write - write to a file");
     printf("rm - remove a file/directory");
     printf("stat - print the stats of current file/directory");
@@ -166,9 +167,15 @@ int main()
         {
             // Create new file/directory
             scanf("%s", input);
-            //call new function
+            cwdir = cmd_new(cwdir, input);
         }
-        else if(input[0] == 'w' && input[1]== 'r' && input[2] == 'i' && input[3] == 't' && input[4] == 'e')
+        else if(input[0] == 'm' && input[1] == 'k' && input[2] == 'd' && input[3] == 'i' && input[4] == 'r')
+        {
+            // Make a new directory
+            scanf("%s", input);
+            cwdir - cmd_mkdir(cwdir, input);
+        }
+        else if(input[0] == 'w' && input[1] == 'r' && input[2] == 'i' && input[3] == 't' && input[4] == 'e')
         {
             // Write to a file
             scanf("%s", input);
@@ -178,13 +185,13 @@ int main()
         {
             // Remove a file/directory
             scanf("%s", input);
-            //call remove function
+            cwdir = cmd_rm(cwdir, input);
         }
         else if(input[0]== 's' && input[1] == 't' && input[2] == 'a' && input[3] == 't')
         {
             // Print the stats of the current file/directory
             scanf("%s", input);
-            //call stat function
+            //cwdir = cmd_stat(input);
         }
         else if(input[0]== 'h' && input[1] == 'e' && input[2] == 'l' && input[3] == 'p') 
         {
@@ -198,6 +205,7 @@ int main()
         }
         else
         {
+            // Invalid command
             printf("'%s' is not a recognized command.\n", input);
         }
     }
