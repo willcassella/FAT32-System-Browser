@@ -88,7 +88,7 @@ struct FAT32_file_t* cmd_open(struct FAT32_file_t* cwdir, const char* path)
     return cwdir;
 }
 
-void cmd_mkdir(struct FAT32_file_t* cwdir, const char* path)
+struct FAT32_file_t* cmd_mkdir(struct FAT32_file_t* cwdir, const char* path)
 {
     struct FAT32_directory_entry_t entry;
 
@@ -111,6 +111,26 @@ void cmd_mkdir(struct FAT32_file_t* cwdir, const char* path)
 
     // Close the file
     FAT32_fclose(subdir);
+    return cwdir;
+}
+
+struct FAT32_file_t* cmd_new(struct FAT32_file_t* cwdir, const char* path)
+{
+    struct FAT32_directory_entry_t entry;
+
+    // Create an entry
+    new_entry(cwdir, path, 0, &entry);
+    return cwdir;
+}
+
+struct FAT32_file_t* cmd_rm(struct FAT32_file_t* cwdir, const char* path)
+{
+    if (!remove_entry(cwdir, path))
+    {
+        printf("Error: %s does not name a directory entry\n", path);
+    }
+
+    return cwdir;
 }
 
 int main()
@@ -120,6 +140,7 @@ int main()
     // Open the root directory
     struct FAT32_file_t* cwdir = FAT32_fopen(FAT32_get_root());
     cmd_help();
+
     while (1)
     {
         printf("$ ");
@@ -146,30 +167,30 @@ int main()
             // Create new file/directory
             scanf("%s", input);
             //call new function
-        }   
+        }
         else if(input[0] == 'w' && input[1]== 'r' && input[2] == 'i' && input[3] == 't' && input[4] == 'e')
         {
             // Write to a file
             scanf("%s", input);
             //call write function
-        } 
+        }
         else if(input[0] == 'r' && input[1] == 'm')
         {
             // Remove a file/directory
             scanf("%s", input);
             //call remove function
-        }  
+        }
         else if(input[0]== 's' && input[1] == 't' && input[2] == 'a' && input[3] == 't')
         {
             // Print the stats of the current file/directory
             scanf("%s", input);
             //call stat function
-        }   
+        }
         else if(input[0]== 'h' && input[1] == 'e' && input[2] == 'l' && input[3] == 'p') 
         {
             // Print the help menu
             cmd_help();
-        }    
+        }
         else if (input[0] == 'e' && input[1] == 'x' && input[2] == 'i' && input[3] == 't')
         {
             // Exit the program

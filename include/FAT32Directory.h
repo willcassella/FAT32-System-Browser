@@ -118,6 +118,8 @@ struct FAT32_file_t* open_entry(struct FAT32_directory_entry_t* entry)
     return FAT32_fopen(address);
 }
 
+void close_entry(struct FAT32_file_t* file);
+
 void new_entry(struct FAT32_file_t* dir, const char* name, FAT32_dir_entry_attribs_t attribs, struct FAT32_directory_entry_t* outEntry);
 
 int remove_entry(struct FAT32_file_t* dir, const char* name);
