@@ -17,6 +17,21 @@ struct FAT32_file_t* cmd_ls(struct FAT32_file_t* cwdir, const char* unused)
     return cwdir;
 }
 
+void cmd_help()
+{
+    printf("FAT32 File Explorer/Reader");
+    printf("Enter one of the following valid commands:");
+    printf("ls - list of files/directories");
+    printf("cd - change directory");
+    printf("open - open a file");
+    printf("new - add new file");
+    printf("write - write to a file");
+    printf("rm - remove a file/directory");
+    printf("stat - print the stats of current file/directory");
+    printf("help - print this menu")
+    printf("exit - exit the program");
+}
+
 struct FAT32_file_t* cmd_cd(struct FAT32_file_t* cwdir, const char* path)
 {
     struct FAT32_directory_entry_t entry;
@@ -104,7 +119,7 @@ int main()
 
     // Open the root directory
     struct FAT32_file_t* cwdir = FAT32_fopen(FAT32_get_root());
-
+    cmd_help();
     while (1)
     {
         printf("$ ");
