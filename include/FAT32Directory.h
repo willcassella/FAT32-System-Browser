@@ -1,4 +1,5 @@
 // FAT32Directory.h
+#pragma once
 
 #include "FAT32.h"
 
@@ -98,7 +99,7 @@ struct FAT32_file_t* FAT32_dir_open_entry(struct FAT32_directory_entry_t* entry)
 void FAT32_dir_close_entry(struct FAT32_directory_entry_t* entry, struct FAT32_file_t* file);
 
 /* Creates a new file with the given name and attributes in the given directory file. */
-void FAT32_dir_new_entry(struct FAT32_file_t* dir, const char* name, FAT32_dir_entry_attribs_t attribs, struct FAT32_directory_entry_t* outEntry);
+int FAT32_dir_new_entry(struct FAT32_file_t* dir, const char* name, FAT32_dir_entry_attribs_t attribs, struct FAT32_directory_entry_t* outEntry);
 
 /* Deletes a file with the given name and attributes from the given directory file. */
 int FAT32_dir_remove_entry(struct FAT32_file_t* dir, const char* name);

@@ -5,16 +5,33 @@
 #include <stddef.h>
 
 /* Represents the address of a FAT32 cluster. */
-struct FAT32_cluster_address_t
+typedef union
 {
-    /* The first four bits of a 32-bit cluster address are unused by FAT32.  */
-    uint32_t unused : 4;
+	struct
+	{
+		/* The first four bits are unused. */
+		uint32_t : 4;
 
-    uint32_t index : 28;
-};
+		/* The entire value of the index. */
+		uint32_t index : 28;
+	};
+
+	struct
+	{
+		/* The first four bits are unused. */
+		uint16_t : 4;
+
+		/* The high two bytes of the index. */
+		uint16_t index_high : 12;
+
+		/* The low two bytes of the index. */
+		uint16_t index_low;
+	};
+
+} FAT32_cluster_address_t;
 
 /* A cluster address with this index indicates is treated as 'NULL'. */
-#define FAT32_CLUSTER_ADDRESS_NULL 0x00000000
+#define FAT32_CLUSTER_ADDRESS_NULL 0x0000000
 
 /* A cluster address with this index indicates that this cluster is the end of the cluster chain. */
 #define FAT32_CLUSTER_ADDRESS_EOC 0xFFFFFF
@@ -22,16 +39,16 @@ struct FAT32_cluster_address_t
 struct FAT32_file_t;
 
 /* Returns the cluster address of the root directory in the file system. */
-struct FAT32_cluster_address_t FAT32_get_root(void);
+FAT32_cluster_address_t FAT32_get_root(void);
 
 /* Reserves an empty cluster, and returns the address to the caller. */
-struct FAT32_cluster_address_t FAT32_new_cluster(void);
+FAT32_cluster_address_t FAT32_new_cluster(void);
 
 /* Frees all clusters in the chain given by 'address'. */
-void FAT32_free_cluster(struct FAT32_cluster_address_t address);
+void FAT32_free_cluster(FAT32_cluster_address_t address);
 
 /* Opens a FAT32 file, given its starting cluster address, and the size of the file. */
-struct FAT32_file_t* FAT32_fopen(struct FAT32_cluster_address_t address, uint32_t size);
+struct FAT32_file_t* FAT32_fopen(FAT32_cluster_address_t address, uint32_t size);
 
 /* Closes a FAT32 file. */
 int FAT32_fclose(struct FAT32_file_t* file);
@@ -58,4 +75,4 @@ int FAT32_fseek(struct FAT32_file_t* file, long offset, int origin);
 long FAT32_ftell(struct FAT32_file_t* file);
 
 /* Returns the starting cluster address of the given file object. */
-struct FAT32_cluster_address_t FAT32_faddress(struct FAT32_file_t* file);
+FAT32_cluster_address_t FAT32_faddress(struct FAT32_file_t* file);
