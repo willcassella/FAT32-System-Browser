@@ -8,8 +8,8 @@
 #include "../include/FAT32.h"
 
 /* The number of bytes in a FAT32 cluster */
-#define FAT32_CLUSTER_SIZE 16
-#define FAT32_NUM_CLUSTERS 32
+#define FAT32_CLUSTER_SIZE 8
+#define FAT32_NUM_CLUSTERS 64
 #define FAT32_TABLE_SIZE (sizeof(FAT32_cluster_address_t) * FAT32_NUM_CLUSTERS)
 #define FAT32_DATA_SIZE (FAT32_CLUSTER_SIZE * FAT32_NUM_CLUSTERS)
 
@@ -167,7 +167,7 @@ size_t FAT32_fread(void* buffer, size_t size, size_t count, struct FAT32_file_t*
 			}
 
 			// Move to the next cluster
-            file->current_cluster = get_table_entry(file->current_cluster);
+			file->current_cluster = nextCluster;
             file->current_cluster_distance += 1;
             file->cluster_offset = 0;
         }

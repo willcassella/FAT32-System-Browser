@@ -17,6 +17,7 @@ static void cmd_help(void)
 	printf("rm - remove a file/directory\n");
 	printf("stat - print the stats of file/directory\n");
 	printf("help - print this menu\n");
+	printf("disk - print a visualization of the state of the disk\n");
 	printf("exit - exit the program\n");
 	printf("\n");
 }
