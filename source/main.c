@@ -29,7 +29,40 @@ static void cmd_ls(struct FAT32_file_t* cwdir)
     struct FAT32_directory_entry_t entry;
     while (FAT32_fread(&entry, sizeof(entry), 1, cwdir))
     {
-        printf("%.8s.%.3s\n", entry.name, entry.ext);
+		// Skip deleted entries
+		if (entry.name[0] == 0)
+		{
+			continue;
+		}
+
+		// Print the name
+		for (size_t i = 0; i < 8; ++i)
+		{
+			if (entry.name[i] == ' ')
+			{
+				break;
+			}
+
+			putchar(entry.name[i]);
+		}
+
+		// Print the extension
+		if (entry.ext[0] != ' ')
+		{
+			putchar('.');
+
+			for (size_t i = 0; i < 3; ++i)
+			{
+				if (entry.ext[i] == ' ')
+				{
+					break;
+				}
+
+				putchar(entry.ext[i]);
+			}
+		}
+
+		putchar('\n');
     }
 }
 
@@ -78,10 +111,12 @@ static void cmd_open(struct FAT32_file_t* cwdir, const char* path)
     // Print all contents of the file to the screen
     struct FAT32_file_t* file = FAT32_dir_open_entry(&entry);
     char c;
-    while (FAT32_fread(&c, sizeof(char), 1, file))
+    while (FAT32_fread(&c, 1, 1, file))
     {
-        printf("%.1s", &c);
+		putchar(c);
     }
+
+	printf("\n");
 
     // Close the file
     FAT32_fclose(file);
@@ -115,10 +150,15 @@ static void cmd_mkdir(struct FAT32_file_t* cwdir, const char* path)
 
 static void cmd_new(struct FAT32_file_t* cwdir, const char* path)
 {
+    // Check if the entry already exists
     struct FAT32_directory_entry_t entry;
+	if (FAT32_dir_get_entry(cwdir, path, &entry))
+	{
+		printf("Error: %s already exists in this directory\n", path);
+		return;
+	}
 
-    // Create an entry
-    FAT32_dir_new_entry(cwdir, path, 0, &entry);
+	FAT32_dir_new_entry(cwdir, path, 0, &entry);
 }
 
 static void cmd_rm(struct FAT32_file_t* cwdir, const char* path)
@@ -131,12 +171,14 @@ static void cmd_rm(struct FAT32_file_t* cwdir, const char* path)
 
 static void cmd_write(struct FAT32_file_t* cwdir, const char* path, const char* write)
 {
-	// Get or create an entry
+	// Delete the file if it already exists
     struct FAT32_directory_entry_t entry;
-    if(!FAT32_dir_get_entry(cwdir, path, &entry))
+    if(FAT32_dir_get_entry(cwdir, path, &entry))
     {
-        FAT32_dir_new_entry(cwdir, path, 0, &entry);
+		FAT32_dir_remove_entry(cwdir, path);
     }
+
+    FAT32_dir_new_entry(cwdir, path, 0, &entry);
 
 	// Open it as a file
     struct FAT32_file_t* file = FAT32_dir_open_entry(&entry);
@@ -149,7 +191,6 @@ static void cmd_write(struct FAT32_file_t* cwdir, const char* path, const char* 
 
 int main()
 {
-    char input[256];
 
     // Open the root directory
 	FAT32_init();
@@ -158,63 +199,70 @@ int main()
 
     while (1)
     {
+		char cmd[16];
         printf("$ ");
-        scanf("%s", input);
+        scanf("%s", cmd);
 
-        if (input[0] == 'l' && input[1] == 's')
+        if (!strcmp(cmd, "ls"))
         {
             cmd_ls(cwdir);
         }
-        else if (input[0] == 'c' && input[1] == 'd')
+        else if (!strcmp(cmd, "cd"))
         {
             // Get directory argument
-            scanf("%s", input);
-            cwdir = cmd_cd(cwdir, input);
+			char arg0[16];
+            scanf("%s", arg0);
+            cwdir = cmd_cd(cwdir, arg0);
         }
-        else if (input[0] == 'o' && input[1] == 'p' && input[2] == 'e' && input[3] == 'n')
+        else if (!strcmp(cmd, "open"))
         {
             // Get directory input
-            scanf("%s", input);
-			cmd_open(cwdir, input);
+            scanf("%s", cmd);
+			cmd_open(cwdir, cmd);
         }
-        else if(input[0] == 'n' && input[1] == 'e' && input [2] == 'w')
+        else if (!strcmp(cmd, "new"))
         {
             // Create new file
-            scanf("%s", input);
-            cmd_new(cwdir, input);
+			char arg0[16];
+            scanf("%s", arg0);
+            cmd_new(cwdir, arg0);
         }
-        else if(input[0] == 'm' && input[1] == 'k' && input[2] == 'd' && input[3] == 'i' && input[4] == 'r')
+        else if (!strcmp(cmd, "mkdir"))
         {
             // Make a new directory
-            scanf("%s", input);
-            cmd_mkdir(cwdir, input);
+			char arg0[16];
+            scanf("%s", arg0);
+            cmd_mkdir(cwdir, arg0);
         }
-        else if(input[0] == 'w' && input[1] == 'r' && input[2] == 'i' && input[3] == 't' && input[4] == 'e')
+        else if (!strcmp(cmd, "write"))
         {
             // Write to a file
-            char arg[16];
-            scanf("%s", arg);
-            scanf("%s", input);
-            cmd_write(cwdir, arg, input);
+            char arg0[16];
+			char arg1[256];
+            scanf("%s", arg0);
+			fgets(arg1, 256, stdin);
+            cmd_write(cwdir, arg0, arg1);
         }
-        else if(input[0] == 'r' && input[1] == 'm')
+        else if (!strcmp(cmd, "rm"))
         {
             // Remove a file/directory
-            scanf("%s", input);
-            cmd_rm(cwdir, input);
+			char arg0[16];
+            scanf("%s", arg0);
+            cmd_rm(cwdir, arg0);
         }
-        else if(input[0]== 's' && input[1] == 't' && input[2] == 'a' && input[3] == 't')
+        else if (!strcmp(cmd, "stat"))
         {
             // Print the stats of the current file/directory
-            scanf("%s", input);
-            //cwdir = cmd_stat(input);
+			char arg0[16];
+            scanf("%s", arg0);
+            //cmd_stat(cwdir, arg0);
         }
-        else if(input[0]== 'h' && input[1] == 'e' && input[2] == 'l' && input[3] == 'p')
+        else if (!strcmp(cmd, "help"))
         {
             // Print the help menu
             cmd_help();
         }
-        else if (input[0] == 'e' && input[1] == 'x' && input[2] == 'i' && input[3] == 't')
+        else if (!strcmp(cmd, "exit"))
         {
             // Exit the program
             break;
@@ -222,7 +270,7 @@ int main()
         else
         {
             // Invalid command
-            printf("'%s' is not a recognized command.\n", input);
+            printf("'%s' is not a recognized command.\n", cmd);
         }
     }
 

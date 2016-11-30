@@ -91,7 +91,11 @@ static void delete_entry(struct FAT32_directory_entry_t* entry)
 		struct FAT32_directory_entry_t subEntry;
 		while (FAT32_fread(&subEntry, sizeof(subEntry), 1, file))
 		{
-			delete_entry(&subEntry);
+			// If the subentry is a real entry
+			if (subEntry.name[0] != 0)
+			{
+				delete_entry(&subEntry);
+			}
 		}
 
 		FAT32_fclose(file);
@@ -162,12 +166,15 @@ int FAT32_dir_new_entry(struct FAT32_file_t* dir, const char* name, FAT32_dir_en
 	FAT32_fseek(dir, 0, FAT32_SEEK_SET);
 
 	// Loop until we either find an empty entry, or we run out of space
+	long insertPos = 0;
 	while (FAT32_fread(outEntry, sizeof(struct FAT32_directory_entry_t), 1, dir))
 	{
 		if (outEntry->name[0] == 0)
 		{
 			break;
 		}
+
+		insertPos = FAT32_ftell(dir);
 	}
 
 	// Set file properties TODO
@@ -180,14 +187,14 @@ int FAT32_dir_new_entry(struct FAT32_file_t* dir, const char* name, FAT32_dir_en
 	outEntry->first_cluster_index_high = cluster.index_high;
 	outEntry->first_cluster_index_low = cluster.index_low;
 
-	// Rewind back to the start of the entry
-	FAT32_fseek(dir, -(long)sizeof(struct FAT32_directory_entry_t), FAT32_SEEK_CUR);
+	// Rewind to where we'll insert the file
+	FAT32_fseek(dir, insertPos, FAT32_SEEK_SET);
 
 	// Write the entry
 	FAT32_fwrite(outEntry, sizeof(struct FAT32_directory_entry_t), 1, dir);
 
 	// Rewind again
-	FAT32_fseek(dir, -(long)sizeof(struct FAT32_directory_entry_t), FAT32_SEEK_CUR);
+	FAT32_fseek(dir, insertPos, FAT32_SEEK_SET);
 
 	return 1;
 }
