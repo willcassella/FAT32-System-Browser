@@ -23,7 +23,7 @@ static void cmd_help(void)
 
 static void cmd_ls(struct FAT32_file_t* cwdir)
 {
-    // Seek to the beginning of the directory file (but ahead of the parent directory entry)
+    // Seek to the beginning of the directory file
     FAT32_fseek(cwdir, 0, FAT32_SEEK_SET);
 
     struct FAT32_directory_entry_t entry;
@@ -36,33 +36,9 @@ static void cmd_ls(struct FAT32_file_t* cwdir)
 		}
 
 		// Print the name
-		for (size_t i = 0; i < 8; ++i)
-		{
-			if (entry.name[i] == ' ')
-			{
-				break;
-			}
-
-			putchar(entry.name[i]);
-		}
-
-		// Print the extension
-		if (entry.ext[0] != ' ')
-		{
-			putchar('.');
-
-			for (size_t i = 0; i < 3; ++i)
-			{
-				if (entry.ext[i] == ' ')
-				{
-					break;
-				}
-
-				putchar(entry.ext[i]);
-			}
-		}
-
-		putchar('\n');
+		char name[FAT32_DIR_NAME_LEN];
+		FAT32_dir_get_entry_name(&entry, name);
+		printf("%s\n", name);
     }
 }
 
@@ -98,14 +74,15 @@ static void cmd_open(struct FAT32_file_t* cwdir, const char* path)
     // Look for the entry in this directory
     if (!FAT32_dir_get_entry(cwdir, path, &entry))
     {
-		printf("Error, %s is not an entry in this directory.", path);
+		printf("Error, %s is not an entry in this directory\n", path);
 		return;
     }
 
     // If the entry is a subdirectory
     if (entry.attribs & FAT32_DIR_ENTRY_ATTRIB_SUBDIRECTORY)
     {
-        printf("Error, %s is a subdirectory and may not be opened for reading.", path);
+        printf("Error, %s is a subdirectory and may not be opened for reading\n", path);
+		return;
     }
 
     // Print all contents of the file to the screen
@@ -130,22 +107,21 @@ static void cmd_mkdir(struct FAT32_file_t* cwdir, const char* path)
     FAT32_dir_new_entry(cwdir, path, FAT32_DIR_ENTRY_ATTRIB_SUBDIRECTORY, &entry);
 
     // Open the directory
-    //struct FAT32_file_t* subdir = FAT32_dir_open_entry(&entry);
+    struct FAT32_file_t* subdir = FAT32_dir_open_entry(&entry);
 
     // Create an entry for the parent
-    //FAT32_cluster_address_t parentAddress = FAT32_faddress(cwdir);
- //   struct FAT32_directory_entry_t parentEntry;
-	//parentEntry.name;
- //   parentEntry.attribs = FAT32_DIR_ENTRY_ATTRIB_HIDDEN | FAT32_DIR_ENTRY_ATTRIB_SUBDIRECTORY;
- //   parentEntry.first_cluster_index_high = parentAddress.index_high;
- //   parentEntry.first_cluster_index_low = parentAddress.index_low;
+    struct FAT32_directory_entry_t parentEntry;
+	FAT32_dir_set_entry_name(&parentEntry, "");
+	FAT32_dir_set_entry_address(&parentEntry, FAT32_faddress(cwdir));
+    parentEntry.attribs = FAT32_DIR_ENTRY_ATTRIB_SYSTEM | FAT32_DIR_ENTRY_ATTRIB_SUBDIRECTORY;
+	parentEntry.name[0] = '.';
+	parentEntry.name[1] = '.';
 
- //   // Write it to the directory file
- //   FAT32_fwrite(&parentEntry, sizeof(FAT32_directory_entry_t), 1, subdir);
+    // Write it to the directory file
+    FAT32_fwrite(&parentEntry, sizeof(parentEntry), 1, subdir);
 
- //   // Close the file
- //   FAT32_fclose(subdir);
- //   return cwdir;
+    // Close the file
+    FAT32_fclose(subdir);
 }
 
 static void cmd_new(struct FAT32_file_t* cwdir, const char* path)
@@ -171,16 +147,20 @@ static void cmd_rm(struct FAT32_file_t* cwdir, const char* path)
 
 static void cmd_write(struct FAT32_file_t* cwdir, const char* path, const char* write)
 {
-	// Delete the file if it already exists
+	// See if the file already exists
     struct FAT32_directory_entry_t entry;
     if(FAT32_dir_get_entry(cwdir, path, &entry))
     {
-		FAT32_dir_remove_entry(cwdir, path);
+		// Clear the existing contents of the file
+		FAT32_dir_clear_entry(&entry);
     }
+	else
+	{
+		// Create a new file
+		FAT32_dir_new_entry(cwdir, path, 0, &entry);
+	}
 
-    FAT32_dir_new_entry(cwdir, path, 0, &entry);
-
-	// Open it as a file
+	// Open the entry
     struct FAT32_file_t* file = FAT32_dir_open_entry(&entry);
     FAT32_fwrite(write, 1, strlen(write), file);
 	FAT32_dir_close_entry(&entry, file);
@@ -191,7 +171,6 @@ static void cmd_write(struct FAT32_file_t* cwdir, const char* path, const char* 
 
 int main()
 {
-
     // Open the root directory
 	FAT32_init();
     struct FAT32_file_t* cwdir = FAT32_fopen(FAT32_get_root(), 0);
@@ -270,7 +249,7 @@ int main()
         else
         {
             // Invalid command
-            printf("'%s' is not a recognized command.\n", cmd);
+            printf("'%s' is not a recognized command\n", cmd);
         }
     }
 

@@ -90,6 +90,9 @@ struct FAT32_file_t
 
     /* The readable size of the file, in bytes. */
     uint32_t size;
+
+	/* Stores whether the file has been modified. */
+	int modified;
 };
 
 struct FAT32_file_t* FAT32_fopen(FAT32_cluster_address_t address, uint32_t size)
@@ -101,6 +104,7 @@ struct FAT32_file_t* FAT32_fopen(FAT32_cluster_address_t address, uint32_t size)
     file->current_cluster_distance = 0;
     file->cluster_offset = 0;
     file->size = size;
+	file->modified = 0;
 
     return file;
 }
@@ -171,9 +175,10 @@ size_t FAT32_fread(void* buffer, size_t size, size_t count, struct FAT32_file_t*
 
 size_t FAT32_fwrite(const void* buffer, size_t size, size_t count, struct FAT32_file_t* file)
 {
-    // Read the buffer as bytes
-    uint32_t offset = 0;
+	// Mark the file as being modified
+	file->modified = 1;
 
+    uint32_t offset = 0;
     for (; offset < count * size; ++offset, ++file->cluster_offset)
     {
         // If we've reached the end of this cluster
@@ -301,12 +306,17 @@ void FAT32_rewind(struct FAT32_file_t* file)
 	file->cluster_offset = 0;
 }
 
-long FAT32_ftell(struct FAT32_file_t* file)
+long FAT32_ftell(const struct FAT32_file_t* file)
 {
     return file->current_cluster_distance * FAT32_CLUSTER_SIZE + file->cluster_offset;
 }
 
-FAT32_cluster_address_t FAT32_faddress(struct FAT32_file_t* file)
+FAT32_cluster_address_t FAT32_faddress(const struct FAT32_file_t* file)
 {
     return file->start_cluster;
+}
+
+int FAT32_fmodified(const struct FAT32_file_t* file)
+{
+	return file->modified;
 }

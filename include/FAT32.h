@@ -78,7 +78,10 @@ int FAT32_fseek(struct FAT32_file_t* file, long offset, int origin);
 void FAT32_rewind(struct FAT32_file_t* file);
 
 /* Returns the number of bytes in the file reader is. */
-long FAT32_ftell(struct FAT32_file_t* file);
+long FAT32_ftell(const struct FAT32_file_t* file);
 
 /* Returns the starting cluster address of the given file object. */
-FAT32_cluster_address_t FAT32_faddress(struct FAT32_file_t* file);
+FAT32_cluster_address_t FAT32_faddress(const struct FAT32_file_t* file);
+
+/* Returns whether the given file has been written to. */
+int FAT32_fmodified(const struct FAT32_file_t* file);

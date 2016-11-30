@@ -89,7 +89,22 @@ struct FAT32_directory_entry_t
     uint32_t size;
 };
 
-/* Returns the cluster address of the first directory entry file that matches the name. */
+/* Returns the cluster address contained in a directory entry. */
+FAT32_cluster_address_t FAT32_dir_get_entry_address(const struct FAT32_directory_entry_t* entry);
+
+/* Sets the cluster address contained in a directory entry. */
+void FAT32_dir_set_entry_address(struct FAT32_directory_entry_t* entry, FAT32_cluster_address_t address);
+
+/* The size of a character array required to hold a null-terminated, formatted directory name. */
+#define FAT32_DIR_NAME_LEN 13
+
+/* Returns a formatted name of the directory entry. */
+void FAT32_dir_get_entry_name(const struct FAT32_directory_entry_t* entry, char* outName);
+
+/* Sets the name of a directory entry. */
+void FAT32_dir_set_entry_name(struct FAT32_directory_entry_t* entry, const char* name);
+
+/* Searches for the first directory entry that matches the given name. */
 int FAT32_dir_get_entry(struct FAT32_file_t* dir, const char* name, struct FAT32_directory_entry_t* outEntry);
 
 /* Opens a file containing the directory entry. */
@@ -103,3 +118,6 @@ int FAT32_dir_new_entry(struct FAT32_file_t* dir, const char* name, FAT32_dir_en
 
 /* Deletes a file with the given name and attributes from the given directory file. */
 int FAT32_dir_remove_entry(struct FAT32_file_t* dir, const char* name);
+
+/* Clears the contents of the given entry. */
+void FAT32_dir_clear_entry(struct FAT32_directory_entry_t* entry);
