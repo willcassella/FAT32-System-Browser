@@ -67,6 +67,7 @@ void FAT32_dir_get_entry_name(const struct FAT32_directory_entry_t* entry, char*
 	if (entry->ext[0] != ' ')
 	{
 		*outName = '.';
+		++outName;
 	}
 
 	for (size_t i = 0; i < 3; ++i, ++outName)
@@ -86,7 +87,7 @@ void FAT32_dir_set_entry_name(struct FAT32_directory_entry_t* entry, const char*
 	memset(entry->ext, ' ', 3);
 
 	char* target = entry->name;
-	for (; *name != 0; ++name, ++target)
+	for (; *name != 0; ++name)
 	{
 		if (*name == '.')
 		{
@@ -95,6 +96,7 @@ void FAT32_dir_set_entry_name(struct FAT32_directory_entry_t* entry, const char*
 		else
 		{
 			*target = *name;
+			++target;
 		}
 	}
 }

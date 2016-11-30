@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <limits.h>
 #include "../include/FAT32.h"
 
 /* The number of bytes in a FAT32 cluster */
