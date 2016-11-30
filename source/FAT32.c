@@ -3,10 +3,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 #include "../include/FAT32.h"
 
 /* The number of bytes in a FAT32 cluster */
-#define FAT32_CLUSTER_SIZE 12
+#define FAT32_CLUSTER_SIZE 16
 #define FAT32_NUM_CLUSTERS 32
 #define FAT32_TABLE_SIZE (sizeof(FAT32_cluster_address_t) * FAT32_NUM_CLUSTERS)
 #define FAT32_DATA_SIZE (FAT32_CLUSTER_SIZE * FAT32_NUM_CLUSTERS)
@@ -63,6 +64,9 @@ FAT32_cluster_address_t FAT32_new_cluster(void)
             break;
         }
     }
+
+	// Make sure we didn't run out of clusters
+	assert(result.index != FAT32_NUM_CLUSTERS /* All out of clusters! */);
 
 	// Set the value as the EOC value
 	FAT32_cluster_address_t resultValue;

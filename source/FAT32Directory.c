@@ -1,7 +1,37 @@
 // FAT32Directory.c
 
 #include <string.h>
+#include <time.h>
 #include "../include/FAT32Directory.h"
+
+static void update_modification_datetime(struct FAT32_directory_entry_t* entry)
+{
+	// Get the current time and date
+	time_t t = time(NULL);
+	struct tm tm = *localtime(&t);
+
+	// Set date values
+	entry->last_modified_date.year = tm.tm_year - 80;
+	entry->last_modified_date.month = tm.tm_mon + 1;
+	entry->last_modified_date.day = tm.tm_mday;
+
+	// Set time values
+	entry->last_modified_time.hours = tm.tm_hour;
+	entry->last_modified_time.minutes = tm.tm_min;
+	entry->last_modified_time.seconds = tm.tm_sec / 2;
+}
+
+static void update_access_date(struct FAT32_directory_entry_t* entry)
+{
+	// Get the current time and date
+	time_t t = time(NULL);
+	struct tm tm = *localtime(&t);
+
+	// Set date values
+	entry->last_access_date.year = tm.tm_year - 80;
+	entry->last_access_date.month = tm.tm_mon + 1;
+	entry->last_access_date.day = tm.tm_mday;
+}
 
 FAT32_cluster_address_t FAT32_dir_get_entry_address(const struct FAT32_directory_entry_t* entry)
 {
@@ -121,6 +151,7 @@ struct FAT32_file_t* FAT32_dir_open_entry(struct FAT32_directory_entry_t* entry)
 	}
 
 	// Open the file, respecting its size
+	update_access_date(entry);
 	return FAT32_fopen(address, entry->size);
 }
 
@@ -131,6 +162,12 @@ void FAT32_dir_close_entry(struct FAT32_directory_entry_t* entry, struct FAT32_f
 	{
 		FAT32_fseek(file, 0, FAT32_SEEK_END);
 		entry->size = FAT32_ftell(file);
+	}
+
+	// If the file was modified, update the modification time
+	if (FAT32_fmodified(file))
+	{
+		update_modification_datetime(entry);
 	}
 
 	// Close the file
@@ -158,6 +195,19 @@ int FAT32_dir_new_entry(struct FAT32_file_t* dir, const char* name, FAT32_dir_en
 	FAT32_dir_set_entry_name(outEntry, name);
 	outEntry->attribs = attribs;
 	outEntry->size = 0;
+
+	// Set initial datetime values
+	time_t t = time(NULL);
+	struct tm tm = *localtime(&t);
+	outEntry->create_date.year = tm.tm_year - 80;
+	outEntry->create_date.month = tm.tm_mon + 1;
+	outEntry->create_date.day = tm.tm_mday;
+	outEntry->create_time.hours = tm.tm_hour;
+	outEntry->create_time.minutes = tm.tm_min;
+	outEntry->create_time.seconds = tm.tm_sec / 2;
+	outEntry->last_modified_date = outEntry->create_date;
+	outEntry->last_modified_time = outEntry->create_time;
+	outEntry->last_access_date = outEntry->create_date;
 
 	// Create a cluster chain for the file
 	FAT32_dir_set_entry_address(outEntry, FAT32_new_cluster());
@@ -233,6 +283,9 @@ void FAT32_dir_clear_entry(struct FAT32_directory_entry_t* entry)
 	// Delete the entry (not as bad as it sounds)
 	delete_entry(entry);
 	entry->size = 0;
+
+	// Update the modification date
+	update_modification_datetime(entry);
 
 	// Reallocate the cluster chain
 	FAT32_dir_set_entry_address(entry, FAT32_new_cluster());

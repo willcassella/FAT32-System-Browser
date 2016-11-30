@@ -96,7 +96,10 @@ static void cmd_open(struct FAT32_file_t* cwdir, const char* path)
 	printf("\n");
 
     // Close the file
-    FAT32_fclose(file);
+	FAT32_dir_close_entry(&entry, file);
+
+	// Write entry changes
+	FAT32_fwrite(&entry, sizeof(entry), 1, cwdir);
 }
 
 static void cmd_mkdir(struct FAT32_file_t* cwdir, const char* path)
@@ -176,6 +179,39 @@ static void cmd_write(struct FAT32_file_t* cwdir, const char* path, const char* 
 	FAT32_fwrite(&entry, sizeof(entry), 1, cwdir);
 }
 
+static void cmd_stat(struct FAT32_file_t* cwdir, const char* path)
+{
+	// Get the entry
+	struct FAT32_directory_entry_t entry;
+	if (!FAT32_dir_get_entry(cwdir, path, &entry))
+	{
+		printf("Error: '%s' does not name a directory entry\n", path);
+		return;
+	}
+
+	// Make sure the file isn't a directory
+	if (entry.attribs & FAT32_DIR_ENTRY_ATTRIB_SUBDIRECTORY)
+	{
+		printf("Error: 'stat' is not supported for directories\n");
+		return;
+	}
+
+	// Get the file's name
+	char name[FAT32_DIR_NAME_LEN];
+	FAT32_dir_get_entry_name(&entry, name);
+
+	printf("Name: '%s'\n", name);
+	printf("Size: %u\n", entry.size);
+
+	printf("Created: %u/%u/%u %u:%u:%u\n", entry.create_date.month, entry.create_date.day, entry.create_date.year + 1980,
+		entry.create_time.hours, entry.create_time.minutes, entry.create_time.seconds * 2);
+
+	printf("Last modification: %u/%u/%u %u:%u:%u\n", entry.last_modified_date.month, entry.last_modified_date.day, entry.last_modified_date.year + 1980,
+		entry.last_modified_time.hours, entry.last_modified_time.minutes, entry.last_modified_time.seconds * 2);
+
+	printf("Last access: %u/%u/%u\n", entry.last_access_date.month, entry.last_access_date.day, entry.last_access_date.year + 1980);
+}
+
 static void print_tree_trace(struct FAT32_file_t* cwdir)
 {
 	// Get the parent directory
@@ -253,9 +289,9 @@ int main()
         {
             // Write to a file
             char arg0[16];
-			char arg1[256];
+			char arg1[1024];
             scanf("%s", arg0);
-			fgets(arg1, 256, stdin);
+			fgets(arg1, 1024, stdin);
 
 			// Remove the traling newline character
 			arg1[strcspn(arg1, "\n")] = 0;
@@ -275,7 +311,7 @@ int main()
             // Print the stats of the current file/directory
 			char arg0[16];
             scanf("%s", arg0);
-            //cmd_stat(cwdir, arg0);
+            cmd_stat(cwdir, arg0);
         }
 		else if (!strcmp(cmd, "disk"))
 		{

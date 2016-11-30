@@ -26,25 +26,25 @@ typedef uint8_t FAT32_dir_entry_attribs_t;
 struct FAT32_time_t
 {
     /* Seconds (0-29), measured in multiples of 2. */
-    uint16_t seconds: 4;
+    uint16_t seconds: 5;
 
     /* Minutes (0-59). */
-    uint16_t minutes: 5;
+    uint16_t minutes: 6;
 
     /* Hours (0-23). */
-    uint16_t hours: 7;
+    uint16_t hours: 5;
 };
 
 struct FAT32_date_t
 {
     /* Day (1-31). */
-    uint16_t day: 4;
+    uint16_t day: 5;
 
     /* Month (1-12). */
-    uint16_t month: 3;
+    uint16_t month: 4;
 
     /* Year (0-119). 0 = 1980, 199=2099. */
-    uint16_t year: 8;
+    uint16_t year: 7;
 };
 
 struct FAT32_directory_entry_t
