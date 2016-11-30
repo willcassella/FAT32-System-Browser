@@ -93,6 +93,8 @@ static void delete_entry(struct FAT32_directory_entry_t* entry)
 		{
 			delete_entry(&subEntry);
 		}
+
+		FAT32_fclose(file);
 	}
 
 	// Free the cluster chain
@@ -114,6 +116,8 @@ int FAT32_dir_get_entry(struct FAT32_file_t* dir, const char* name, struct FAT32
 
         if (compare_names(&pathName, &entryName) == 0)
         {
+			// Rewind to the start of the entry
+			FAT32_fseek(dir, -sizeof(struct FAT32_directory_entry_t), FAT32_SEEK_CUR);
             return 1;
         }
     }
@@ -124,17 +128,21 @@ int FAT32_dir_get_entry(struct FAT32_file_t* dir, const char* name, struct FAT32
 struct FAT32_file_t* FAT32_dir_open_entry(struct FAT32_directory_entry_t* entry)
 {
     // Construct the address
-	FAT32_cluster_address_t address;
-	address.index_high = entry->first_cluster_index_high;
-	address.index_low = entry->first_cluster_index_low;
+	FAT32_cluster_address_t address = get_entry_address(entry);
 
-	// Open the file
+	// If the entry is a subdirectory, open it with max size (directories are unsized)
+	if (entry->attribs & FAT32_DIR_ENTRY_ATTRIB_SUBDIRECTORY)
+	{
+		return FAT32_fopen(address, UINT32_MAX);
+	}
+
+	// Open the file, respecting its size
 	return FAT32_fopen(address, entry->size);
 }
 
 void FAT32_dir_close_entry(struct FAT32_directory_entry_t* entry, struct FAT32_file_t* file)
 {
-	// If the entry is not a directory, adjust the size
+	// If the entry is not a directory, update the size
 	if ((entry->attribs & FAT32_DIR_ENTRY_ATTRIB_SUBDIRECTORY) == 0)
 	{
 		FAT32_fseek(file, 0, FAT32_SEEK_END);
@@ -165,6 +173,9 @@ int FAT32_dir_new_entry(struct FAT32_file_t* dir, const char* name, FAT32_dir_en
 	// Set file properties TODO
 	set_entry_name(outEntry, &nameObj);
 	outEntry->attribs = attribs;
+
+	// Rewind back to the start of the entry
+	FAT32_fseek(dir, -sizeof(struct FAT32_directory_entry_t), FAT32_SEEK_CUR);
 
 	// Write the entry
 	FAT32_fwrite(outEntry, sizeof(struct FAT32_directory_entry_t), 1, dir);

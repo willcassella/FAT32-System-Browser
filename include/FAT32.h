@@ -38,6 +38,9 @@ typedef union
 
 struct FAT32_file_t;
 
+/* Initializes the FAT32 file system. */
+void FAT32_init(void);
+
 /* Returns the cluster address of the root directory in the file system. */
 FAT32_cluster_address_t FAT32_get_root(void);
 
