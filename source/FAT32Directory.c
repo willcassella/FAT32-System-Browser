@@ -106,8 +106,8 @@ int FAT32_dir_get_entry(struct FAT32_file_t* dir, const char* name, struct FAT32
 	// Get the name of the object
 	const struct FAT32_entry_name_t pathName = path_to_name(name);
 
-    // Seek to the beginning of the directory file
-    FAT32_fseek(dir, FAT32_SEEK_SET, 0);
+    // Rewind the file
+    FAT32_rewind(dir);
 
     // Loop until the entry is found
     while (FAT32_fread(outEntry, sizeof(struct FAT32_directory_entry_t), 1, dir))
@@ -117,7 +117,7 @@ int FAT32_dir_get_entry(struct FAT32_file_t* dir, const char* name, struct FAT32
         if (compare_names(&pathName, &entryName) == 0)
         {
 			// Rewind to the start of the entry
-			FAT32_fseek(dir, -sizeof(struct FAT32_directory_entry_t), FAT32_SEEK_CUR);
+			FAT32_fseek(dir, -(long)sizeof(struct FAT32_directory_entry_t), FAT32_SEEK_CUR);
             return 1;
         }
     }
@@ -173,12 +173,22 @@ int FAT32_dir_new_entry(struct FAT32_file_t* dir, const char* name, FAT32_dir_en
 	// Set file properties TODO
 	set_entry_name(outEntry, &nameObj);
 	outEntry->attribs = attribs;
+	outEntry->size = 0;
+
+	// Create a cluster chain for the file
+	FAT32_cluster_address_t cluster = FAT32_new_cluster();
+	outEntry->first_cluster_index_high = cluster.index_high;
+	outEntry->first_cluster_index_low = cluster.index_low;
 
 	// Rewind back to the start of the entry
-	FAT32_fseek(dir, -sizeof(struct FAT32_directory_entry_t), FAT32_SEEK_CUR);
+	FAT32_fseek(dir, -(long)sizeof(struct FAT32_directory_entry_t), FAT32_SEEK_CUR);
 
 	// Write the entry
 	FAT32_fwrite(outEntry, sizeof(struct FAT32_directory_entry_t), 1, dir);
+
+	// Rewind again
+	FAT32_fseek(dir, -(long)sizeof(struct FAT32_directory_entry_t), FAT32_SEEK_CUR);
+
 	return 1;
 }
 

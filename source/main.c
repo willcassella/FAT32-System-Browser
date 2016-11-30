@@ -4,10 +4,27 @@
 #include <string.h>
 #include "../include/FAT32Directory.h"
 
-void cmd_ls(struct FAT32_file_t* cwdir, const char* unused)
+static void cmd_help(void)
+{
+	printf("FAT32 File Explorer/Reader\n");
+	printf("Enter one of the following valid commands:\n");
+	printf("ls - list of files/directories\n");
+	printf("cd - change directory\n");
+	printf("open - open a file\n");
+	printf("new - add new file\n");
+	printf("mkdir - create a new directory\n");
+	printf("write - write to a file\n");
+	printf("rm - remove a file/directory\n");
+	printf("stat - print the stats of file/directory\n");
+	printf("help - print this menu\n");
+	printf("exit - exit the program\n");
+	printf("\n");
+}
+
+static void cmd_ls(struct FAT32_file_t* cwdir)
 {
     // Seek to the beginning of the directory file (but ahead of the parent directory entry)
-    FAT32_fseek(cwdir, FAT32_SEEK_SET, sizeof(struct FAT32_directory_entry_t));
+    FAT32_fseek(cwdir, 0, FAT32_SEEK_SET);
 
     struct FAT32_directory_entry_t entry;
     while (FAT32_fread(&entry, sizeof(entry), 1, cwdir))
@@ -16,23 +33,7 @@ void cmd_ls(struct FAT32_file_t* cwdir, const char* unused)
     }
 }
 
-void cmd_help()
-{
-    printf("FAT32 File Explorer/Reader\n");
-    printf("Enter one of the following valid commands:\n");
-    printf("ls - list of files/directories\n");
-    printf("cd - change directory\n");
-    printf("open - open a file\n");
-    printf("new - add new file\n");
-    printf("mkdir - create a new directory\n");
-    printf("write - write to a file\n");
-    printf("rm - remove a file/directory\n");
-    printf("stat - print the stats of current file/directory\n");
-	printf("help - print this menu\n");
-	printf("exit - exit the program\n");
-}
-
-struct FAT32_file_t* cmd_cd(struct FAT32_file_t* cwdir, const char* path)
+static struct FAT32_file_t* cmd_cd(struct FAT32_file_t* cwdir, const char* path)
 {
     struct FAT32_directory_entry_t entry;
 
@@ -57,7 +58,7 @@ struct FAT32_file_t* cmd_cd(struct FAT32_file_t* cwdir, const char* path)
     return FAT32_dir_open_entry(&entry);
 }
 
-void cmd_open(struct FAT32_file_t* cwdir, const char* path)
+static void cmd_open(struct FAT32_file_t* cwdir, const char* path)
 {
     struct FAT32_directory_entry_t entry;
 
@@ -65,6 +66,7 @@ void cmd_open(struct FAT32_file_t* cwdir, const char* path)
     if (!FAT32_dir_get_entry(cwdir, path, &entry))
     {
 		printf("Error, %s is not an entry in this directory.", path);
+		return;
     }
 
     // If the entry is a subdirectory
@@ -85,7 +87,7 @@ void cmd_open(struct FAT32_file_t* cwdir, const char* path)
     FAT32_fclose(file);
 }
 
-void cmd_mkdir(struct FAT32_file_t* cwdir, const char* path)
+static void cmd_mkdir(struct FAT32_file_t* cwdir, const char* path)
 {
     struct FAT32_directory_entry_t entry;
 
@@ -127,7 +129,7 @@ static void cmd_rm(struct FAT32_file_t* cwdir, const char* path)
     }
 }
 
-void cmd_write(struct FAT32_file_t* cwdir, const char* path, const char* write)
+static void cmd_write(struct FAT32_file_t* cwdir, const char* path, const char* write)
 {
 	// Get or create an entry
     struct FAT32_directory_entry_t entry;
@@ -140,6 +142,9 @@ void cmd_write(struct FAT32_file_t* cwdir, const char* path, const char* write)
     struct FAT32_file_t* file = FAT32_dir_open_entry(&entry);
     FAT32_fwrite(write, 1, strlen(write), file);
 	FAT32_dir_close_entry(&entry, file);
+
+	// Save the entry
+	FAT32_fwrite(&entry, sizeof(entry), 1, cwdir);
 }
 
 int main()
@@ -147,6 +152,7 @@ int main()
     char input[256];
 
     // Open the root directory
+	FAT32_init();
     struct FAT32_file_t* cwdir = FAT32_fopen(FAT32_get_root(), 0);
     cmd_help();
 
@@ -155,9 +161,9 @@ int main()
         printf("$ ");
         scanf("%s", input);
 
-        if (input[0] == 'l' && input[1] == 'l')
+        if (input[0] == 'l' && input[1] == 's')
         {
-            cmd_ls(cwdir, NULL);
+            cmd_ls(cwdir);
         }
         else if (input[0] == 'c' && input[1] == 'd')
         {
@@ -173,7 +179,7 @@ int main()
         }
         else if(input[0] == 'n' && input[1] == 'e' && input [2] == 'w')
         {
-            // Create new file/directory
+            // Create new file
             scanf("%s", input);
             cmd_new(cwdir, input);
         }

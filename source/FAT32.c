@@ -6,7 +6,7 @@
 
 /* The number of bytes in a FAT32 cluster */
 #define FAT32_CLUSTER_SIZE 32
-#define FAT32_NUM_CLUSTERS 12
+#define FAT32_NUM_CLUSTERS 32
 #define FAT32_TABLE_SIZE (sizeof(FAT32_cluster_address_t) * FAT32_NUM_CLUSTERS)
 #define FAT32_DATA_SIZE (FAT32_CLUSTER_SIZE * FAT32_NUM_CLUSTERS)
 
@@ -139,13 +139,13 @@ size_t FAT32_fread(void* buffer, size_t size, size_t count, struct FAT32_file_t*
     for (; offset < count * size; ++offset, ++file->cluster_offset)
     {
         // If we've reached the end of this file
-        if (FAT32_ftell(file) > file->size)
+        if (FAT32_ftell(file) >= file->size)
         {
             break;
         }
 
         // If we're at the end of this cluster
-        if (file->cluster_offset == FAT32_CLUSTER_SIZE)
+        if (file->cluster_offset >= FAT32_CLUSTER_SIZE)
         {
 			// Get the next cluster in the chain
 			FAT32_cluster_address_t nextCluster = get_table_entry(file->current_cluster);
@@ -177,7 +177,7 @@ size_t FAT32_fwrite(const void* buffer, size_t size, size_t count, struct FAT32_
     for (; offset < count * size; ++offset, ++file->cluster_offset)
     {
         // If we've reached the end of this cluster
-        if (file->cluster_offset == FAT32_CLUSTER_SIZE)
+        if (file->cluster_offset >= FAT32_CLUSTER_SIZE)
         {
             // Get the next cluster in the chain
             FAT32_cluster_address_t nextCluster = get_table_entry(file->current_cluster);
@@ -207,31 +207,98 @@ size_t FAT32_fwrite(const void* buffer, size_t size, size_t count, struct FAT32_
     return offset / size;
 }
 
+static void seek_forward(struct FAT32_file_t* file, long distance)
+{
+	// While there's still more to go
+	while (distance > 0 && FAT32_ftell(file) < file->size)
+	{
+		// Move forward
+		file->cluster_offset += 1;
+		distance -= 1;
+
+		// If we've reached the end of this cluster
+		if (file->cluster_offset >= FAT32_CLUSTER_SIZE)
+		{
+			// Get the next cluster
+			FAT32_cluster_address_t nextCluster = get_table_entry(file->current_cluster);
+
+			// If we're at the end of the chain
+			if (nextCluster.index == FAT32_CLUSTER_ADDRESS_EOC)
+			{
+				break;
+			}
+
+			// Move to the next cluster
+			file->current_cluster = nextCluster;
+			file->current_cluster_distance += 1;
+			file->cluster_offset = 0;
+		}
+	}
+}
+
 int FAT32_fseek(struct FAT32_file_t* file, long offset, int origin)
 {
-    // If they're seeking to the beginning
-    if (origin == FAT32_SEEK_SET)
-    {
-        file->current_cluster = file->start_cluster;
-		file->current_cluster_distance = 0;
-        file->cluster_offset = 0;
-    }
+    // If they're seeking forward or to an origin
+	if (offset >= 0)
+	{
+		switch (origin)
+		{
+		case FAT32_SEEK_SET:
+			FAT32_rewind(file);
+			seek_forward(file, offset);
+			return 0;
 
-    // Set the offset
-    file->cluster_offset = offset % FAT32_CLUSTER_SIZE;
-    offset -= file->cluster_offset;
+		case FAT32_SEEK_CUR:
+			seek_forward(file, offset);
+			return 0;
 
-    // Set the current cluster
-    while (offset != 0)
-    {
-        file->current_cluster = get_table_entry(file->current_cluster);
-        offset /= FAT32_CLUSTER_SIZE;
-    }
+		case FAT32_SEEK_END:
+			seek_forward(file, LONG_MAX);
+			return 0;
 
-    // Move back so we're not past the end
-    //file->offset = file->offset < file->end_offset ? file->offset : file->end_offset;
+		default:
+			return 1;
+		}
+	}
 
-    return 0;
+	long target;
+
+	// If they're seeking backward
+	if (offset < 0)
+	{
+		switch (origin)
+		{
+		case FAT32_SEEK_SET:
+			FAT32_rewind(file);
+			return 0;
+
+		case FAT32_SEEK_CUR:
+			target = FAT32_ftell(file) + offset;
+			FAT32_rewind(file);
+			seek_forward(file, target);
+			return 0;
+
+		case FAT32_SEEK_END:
+			seek_forward(file, LONG_MAX);
+			target = FAT32_ftell(file) + offset;
+			FAT32_rewind(file);
+			seek_forward(file, target);
+			return 0;
+
+		default:
+			return 1;
+		}
+	}
+
+    return 1;
+}
+
+void FAT32_rewind(struct FAT32_file_t* file)
+{
+	// Just go back to the beginning
+	file->current_cluster = file->start_cluster;
+	file->current_cluster_distance = 0;
+	file->cluster_offset = 0;
 }
 
 long FAT32_ftell(struct FAT32_file_t* file)

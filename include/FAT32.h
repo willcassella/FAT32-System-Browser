@@ -74,6 +74,9 @@ size_t FAT32_fwrite(const void* buffer, size_t size, size_t count, struct FAT32_
 /* Works the same was as normal 'fseek'. */
 int FAT32_fseek(struct FAT32_file_t* file, long offset, int origin);
 
+/* Returns the file handle to the start of the file. */
+void FAT32_rewind(struct FAT32_file_t* file);
+
 /* Returns the number of bytes in the file reader is. */
 long FAT32_ftell(struct FAT32_file_t* file);
 
