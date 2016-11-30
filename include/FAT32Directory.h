@@ -107,6 +107,9 @@ void FAT32_dir_set_entry_name(struct FAT32_directory_entry_t* entry, const char*
 /* Searches for the first directory entry that matches the given name. */
 int FAT32_dir_get_entry(struct FAT32_file_t* dir, const char* name, struct FAT32_directory_entry_t* outEntry);
 
+/* Searches for the first directory entry that has the given cluster address. */
+int FAT32_dir_get_entry_by_address(struct FAT32_file_t* dir, FAT32_cluster_address_t address, struct FAT32_directory_entry_t* outEntry);
+
 /* Opens a file containing the directory entry. */
 struct FAT32_file_t* FAT32_dir_open_entry(struct FAT32_directory_entry_t* entry);
 

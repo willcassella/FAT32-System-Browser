@@ -85,3 +85,6 @@ FAT32_cluster_address_t FAT32_faddress(const struct FAT32_file_t* file);
 
 /* Returns whether the given file has been written to. */
 int FAT32_fmodified(const struct FAT32_file_t* file);
+
+/* Prints the state of the FAT32 hard drive. */
+void FAT32_print_disk(void);

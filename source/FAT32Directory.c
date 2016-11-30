@@ -92,6 +92,23 @@ int FAT32_dir_get_entry(struct FAT32_file_t* dir, const char* name, struct FAT32
     return 0;
 }
 
+int FAT32_dir_get_entry_by_address(struct FAT32_file_t* dir, FAT32_cluster_address_t address, struct FAT32_directory_entry_t* outEntry)
+{
+	// Rewind the directory file
+	FAT32_rewind(dir);
+
+	// Loop until the tnry is found
+	while (FAT32_fread(outEntry, sizeof(struct FAT32_directory_entry_t), 1, dir))
+	{
+		if (FAT32_dir_get_entry_address(outEntry).index == address.index)
+		{
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 struct FAT32_file_t* FAT32_dir_open_entry(struct FAT32_directory_entry_t* entry)
 {
     // Construct the address

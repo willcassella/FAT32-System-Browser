@@ -2,10 +2,11 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "../include/FAT32.h"
 
 /* The number of bytes in a FAT32 cluster */
-#define FAT32_CLUSTER_SIZE 32
+#define FAT32_CLUSTER_SIZE 12
 #define FAT32_NUM_CLUSTERS 32
 #define FAT32_TABLE_SIZE (sizeof(FAT32_cluster_address_t) * FAT32_NUM_CLUSTERS)
 #define FAT32_DATA_SIZE (FAT32_CLUSTER_SIZE * FAT32_NUM_CLUSTERS)
@@ -319,4 +320,37 @@ FAT32_cluster_address_t FAT32_faddress(const struct FAT32_file_t* file)
 int FAT32_fmodified(const struct FAT32_file_t* file)
 {
 	return file->modified;
+}
+
+void FAT32_print_disk(void)
+{
+	FAT32_cluster_address_t address;
+	address.index = 0;
+
+	// For each cluster
+	for (; address.index < FAT32_NUM_CLUSTERS; ++address.index)
+	{
+		HDByte_t cluster[FAT32_CLUSTER_SIZE];
+		memset(cluster, ' ', FAT32_CLUSTER_SIZE);
+
+		// If the cluster contains actual data
+		if (get_table_entry(address).index != FAT32_CLUSTER_ADDRESS_NULL)
+		{
+			memcpy(cluster, get_data_entry(address), FAT32_CLUSTER_SIZE);
+
+			// Remove the alarm character, which shows up sometimes
+			for (size_t i = 0; i < FAT32_CLUSTER_SIZE; ++i)
+			{
+				if (cluster[i] == '\a')
+				{
+					cluster[i] = 0;
+				}
+			}
+		}
+
+		// Print the contents
+		printf("[");
+		fwrite(cluster, 1, FAT32_CLUSTER_SIZE, stdout);
+		printf("]\n");
+	}
 }
