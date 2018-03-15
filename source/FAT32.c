@@ -343,12 +343,13 @@ void FAT32_print_disk(void)
 		{
 			memcpy(cluster, get_data_entry(address), FAT32_CLUSTER_SIZE);
 
-			// Remove the alarm character, which shows up sometimes
+			// Remove unwanted characters
 			for (size_t i = 0; i < FAT32_CLUSTER_SIZE; ++i)
 			{
-				if (cluster[i] == '\a')
+				const char c = cluster[i];
+				if (c == '\a' || c == '\b' || c == '\e' || c == '\f' || c == '\n' || c == '\r' || c == '\t' || c == '\v')
 				{
-					cluster[i] = 0;
+					cluster[i] = ' ';
 				}
 			}
 		}
